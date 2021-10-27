@@ -73,6 +73,50 @@ window.addEventListener("load", () => {
             }
         });
     }
+    getClientSelect=(id=false)=>{
+        $.ajax({
+            url: url.client()+'/all',
+            type: 'GET',
+            dataType: 'json',
+            success: function (respuesta) {
+                const content = respuesta.map((item)=>{
+                    return $(`<option value="${item.idClient}">${item.name}</option>`);
+                });
+                $("#client-id-select").html(content);
+
+            },
+            error: function (xhr, status) {
+                Toast.fire('Ha sucedido un problema');
+            },
+            complete: function (xhr, status) {
+                if (id){
+                    $("#client-id-select").val(id);
+                }
+            }
+        });
+    };
+    getComputerSelect=(id=false)=>{
+        $.ajax({
+            url: url.computer()+'/all',
+            type: 'GET',
+            dataType: 'json',
+            success: function (respuesta) {
+                const content = respuesta.map((item)=>{
+                    return $(`<option value="${item.id}">${item.name}</option>`);
+                });
+                $("#computer-id-select").html(content);
+
+            },
+            error: function (xhr, status) {
+                Toast.fire('Ha sucedido un problema');
+            },
+            complete: function (xhr, status) {
+                if (id){
+                    $("#computer-id-select").val(id);
+                }
+            }
+        });
+    };
     drawTable = (thead, data, option = {icon: '', title: '',template:''}) => {
         o = {thead: thead, data: data, option: option};
         document.getElementById('temp').innerHTML = tmpl(option.template, o);
@@ -135,12 +179,12 @@ window.addEventListener("load", () => {
     };
     drawTableMessage=()=>{
         $.ajax({
-            url: url.message(),
+            url: url.message()+'/all',
             type: 'GET',
             dataType: 'json',
             success: function (respuesta) {
-                drawTable(['Id', 'Mensaje', 'Acciones'], respuesta, {
-                    icon: 'computer',
+                drawTable(['Mensaje','Cliente','Computador'/*, 'Acciones'*/], {items:respuesta}, {
+                    icon: 'comment alternate outline',
                     title: 'Añadir Mensaje',
                     template: 'tmpl-tableMessage'
                 });
@@ -156,6 +200,38 @@ window.addEventListener("load", () => {
                 $(`#btn-crear-message`).on({
                     click: function () {
                         createAndUpdateMessage();
+                    }
+                });
+            }
+        });
+    };
+    drawTableReservaciones=()=>{
+        $.ajax({
+            url: url.reservation()+'/all',
+            type: 'GET',
+            dataType: 'json',
+            success: function (respuesta) {
+                respuesta.map((item,i)=>{
+                    respuesta[i].startDate = item.startDate.split('T')[0];
+                    respuesta[i].devolutionDate = item.devolutionDate.split('T')[0];
+                });
+                drawTable(['Fecha de inicio','Fecha entrega','Cliente','Computador'/*, 'Acciones'*/], {items:respuesta}, {
+                    icon: 'calendar alternate outline',
+                    title: 'Añadir Reserva',
+                    template: 'tmpl-tableReservaciones'
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Se cargo la tabla'
+                });
+            },
+            error: function (xhr, status) {
+                Toast.fire('Ha sucedido un problema');
+            },
+            complete: function (xhr, status) {
+                $(`#btn-crear-reservaciones`).on({
+                    click: function () {
+                        createAndUpdateReservaciones();
                     }
                 });
             }
@@ -247,6 +323,7 @@ window.addEventListener("load", () => {
 </div>`,
             confirmButtonText: (!x) ? 'Guardar' : 'Actualizar',
             focusConfirm: false,
+            showCancelButton: true,
             preConfirm: () => {
                 const idComputer = Swal.getPopup().querySelector('#id-computer').value;
                 const nameComputer = Swal.getPopup().querySelector('#name-computer').value;
@@ -339,26 +416,46 @@ window.addEventListener("load", () => {
   <div class="ui padded grid fields">
     <div class="sixteen wide wide field">
       <label>Id</label>
-      <input placeholder="Id" min="1" id="id-message" type="number" ${(!x) ? '' : `value="${x.items[0]['id']}"`} ${(!x) ? '' : 'disabled'}>
+      <input placeholder="Id" min="1" id="id-message" type="number" ${(!x) ? '' : `value="${x.items[0]['id']}"`} disabled>
+    </div>
+    <div class="eight wide wide field">
+      <label>Cliente</label>
+      <select id="client-id-select">
+      <option value="">Selecione</option>
+</select>
+    </div>
+    <div class="eight wide wide field">
+      <label>Computador</label>
+      <select id="computer-id-select">
+      <option value="">Selecione</option>
+</select>
     </div>
     <div class="sixteen wide wide field">
       <label>Mensaje</label>
       <textarea placeholder="Mensaje" id="messagetext-message">${(!x) ? '' : `${x.items[0]['messagetext']}`}</textarea>
     </div>
-    
   </div>
 </div>`,
             confirmButtonText: (!x) ? 'Guardar' : 'Actualizar',
             focusConfirm: false,
+            showCancelButton: true,
             preConfirm: () => {
                 const idMessage = Swal.getPopup().querySelector('#id-message').value;
                 const messagtextMessage = Swal.getPopup().querySelector('#messagetext-message').value;
-                if (!idMessage || !messagtextMessage) {
+                const idcomputerMessage = Swal.getPopup().querySelector('#computer-id-select').value;
+                const idclientMessage = Swal.getPopup().querySelector('#client-id-select').value;
+                if (!messagtextMessage) {
                     Swal.showValidationMessage(`Todos los campos son obligatorios`);
                 }
                 return {
-                    id: +idMessage,
-                    messagetext: messagtextMessage
+                    idMessage: (!idMessage)?null:+idMessage,
+                    messageText:messagtextMessage,
+                    client:{
+                        idClient:+idclientMessage
+                    },
+                    computer:{
+                        id:+idcomputerMessage
+                    }
                 };
             }
         }).then((result) => {
@@ -371,8 +468,81 @@ window.addEventListener("load", () => {
                 });
                 ajaxSaveAndUpdate(result.value, url.message(), !x?'POST':'PUT');
             }
-            router.navigate('/message');
+            timeOutRuta('/message');
         });
+        getClientSelect();
+        getComputerSelect();
+    };
+    createAndUpdateReservaciones = (x = false) => {
+        Swal.fire({
+            title: (!x) ? 'Registrar una reserva' : 'Actualizar reserva',
+            html: `
+                <div class="ui tiny form">
+  <div class="ui padded grid fields">
+    <div class="sixteen wide wide field">
+      <label>Id</label>
+      <input placeholder="Id" min="1" id="id-reservaciones" type="number" ${(!x) ? '' : `value="${x.items[0]['id']}"`} disabled>
+    </div>
+    <div class="eight wide wide field">
+      <label>Cliente</label>
+      <select id="client-id-select">
+      <option value="">Selecione</option>
+</select>
+    </div>
+    <div class="eight wide wide field">
+      <label>Computador</label>
+      <select id="computer-id-select">
+      <option value="">Selecione</option>
+</select>
+    </div>
+    <div class="eight wide wide field">
+      <label>Fecha de inicio</label>
+      <input id="startDate-reservaciones" type="date">
+    </div>
+    <div class="eight wide wide field">
+      <label>Fecha de entrega</label>
+      <input id="devolutionDate-reservaciones" type="date">
+    </div>
+  </div>
+</div>`,
+            confirmButtonText: (!x) ? 'Guardar' : 'Actualizar',
+            focusConfirm: false,
+            showCancelButton: true,
+            preConfirm: () => {
+                const idreservaciones = Swal.getPopup().querySelector('#id-reservaciones').value;
+                const idcomputerMessage = Swal.getPopup().querySelector('#computer-id-select').value;
+                const idclientMessage = Swal.getPopup().querySelector('#client-id-select').value;
+                const startDatereservaciones = Swal.getPopup().querySelector('#startDate-reservaciones').value;
+                const devolutionDatereservaciones = Swal.getPopup().querySelector('#devolutionDate-reservaciones').value;
+                if (startDatereservaciones==="" || devolutionDatereservaciones==="") {
+                    Swal.showValidationMessage(`Todos los campos son obligatorios`);
+                }
+                return {
+                    idReservation: (!idreservaciones)?null:+idreservaciones,
+                    startDate:startDatereservaciones,
+                    devolutionDate:devolutionDatereservaciones,
+                    client:{
+                        idClient:+idclientMessage
+                    },
+                    computer:{
+                        id:+idcomputerMessage
+                    }
+                };
+            }
+        }).then((result) => {
+            if (typeof result.value === "undefined") {
+
+            } else {
+                Toast.fire({
+                    icon: 'info',
+                    title: !x?'Guardando....':'Actualizando...'
+                });
+                ajaxSaveAndUpdate(result.value, url.reservation(), !x?'POST':'PUT');
+            }
+            timeOutRuta('/reservaciones');
+        });
+        getClientSelect();
+        getComputerSelect();
     };
     createAndUpdateClient = (x = false) => {
         Swal.fire({
@@ -408,6 +578,7 @@ window.addEventListener("load", () => {
 </div>`,
             confirmButtonText: (!x) ? 'Guardar' : 'Actualizar',
             focusConfirm: false,
+            showCancelButton: true,
             preConfirm: () => {
                 const idClient = Swal.getPopup().querySelector('#id-client').value;
                 const nameClient = Swal.getPopup().querySelector('#name-client').value;
@@ -439,6 +610,19 @@ window.addEventListener("load", () => {
         });
     };
     router
+        .on('*',()=>{},{
+            before: function (done, params) {
+                if(1===0) {
+                    $(".unauthenticated").show();
+                    $(".authenticated").hide();
+                    done(false);
+                } else {
+                    $(".unauthenticated").hide();
+                    $(".authenticated").show();
+                    done();
+                }
+            }
+        })
         .on('/', () => {
             router.navigate('/category');
         })
@@ -450,6 +634,15 @@ window.addEventListener("load", () => {
             drawTableCategory();
         },{
             already: function (params) { drawTableCategory(); }
+        })
+        .on('/reservaciones',()=>{
+            Toast.fire({
+                icon: 'success',
+                title: 'Cargando tabla de reservaciones...'
+            });
+            drawTableReservaciones();
+        },{
+            already: function (params) { drawTableReservaciones(); }
         })
         .on('/computer', () => {
             Toast.fire({
@@ -599,9 +792,6 @@ window.addEventListener("load", () => {
                 },
             });
         });
-    router.notFound(function (){
-        window.location.href = "/404.html";
-    })
     router.resolve();
     //Funciones del navbar
     navbar = (x = false) => {

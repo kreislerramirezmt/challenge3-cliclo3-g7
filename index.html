@@ -34,21 +34,21 @@
 </head>
 <body>
 <div class="ui container">
-    <div class="ui segment padded text-aling-center d-none">
+    <div style="display: none;" class="ui segment padded text-aling-center unauthenticated">
         <h2 class="ui icon header">
             <i class="settings icon"></i>
             <div class="content">¡Bienvenido!
             </div>
         </h2>
         <div class="ui centered">
-            <a href="/login" class="ui green button">
+            <a href="/oauth2/authorization/github" class="ui green button">
                 <i class="github icon"></i>
                 Login with GitHub
             </a>
         </div>
 
     </div>
-    <div class="ui attached stackable menu">
+    <div style="" class="ui attached stackable menu authenticated">
         <div class="ui container">
             <a href="/category" class="item" data-navigo>
                 <i class="hashtag icon"></i> Categorias
@@ -70,21 +70,7 @@
             </div>
         </div>
     </div>
-    <div class="ui three item pointing menu d-none">
-        <a href="/computer" class="item" data-navigo>
-            <i class="computer icon"></i>
-            Computadores
-        </a>
-        <a href="/client" class="item" data-navigo>
-            <i class="user outline icon"></i>
-            Clientes
-        </a>
-        <a href="/message" class="item" data-navigo>
-            <i class="comment alternate outline icon"></i>
-            Mensajes
-        </a>
-    </div>
-    <div class="ui segment d-non">
+    <div style="" class="ui segment authenticated">
         <p id="temp"></p>
     </div>
 </div>
@@ -288,15 +274,61 @@
             <tbody>
             {% for (var i=0; i<o.data.items.length; i++) { %}
             <tr>
-                <td class="collapsing">
-                    {%=o.data.items[i].id%}
-                </td>
-                <td>{%=o.data.items[i].messagetext%}</td>
-                <td>
+                <td class="collapsing">{%=o.data.items[i].messageText%}</td>
+                <td>{%=(o.data.items[i].client===null)?'Cliente no existe o fue eliminado.':o.data.items[i].client.name%}</td>
+                <td>{%=(o.data.items[i].computer===null)?'Computador no existe o fue eliminado.':o.data.items[i].computer.name%}</td>
+                <td class="d-none">
                     <div class="tiny ui buttons">
-            <a class="ui negative button" href="#/message/{%=o.data.items[i].id%}/delete">Eliminar</a>
+            <a class="ui negative button" href="#/message/{%=o.data.items[i].idMessage%}/delete">Eliminar</a>
             <div class="or" data-text="ó"></div>
-            <a class="ui blue button" href="#/message/{%=o.data.items[i].id%}/edit">Editar</a>
+            <a class="ui blue button" href="#/message/{%=o.data.items[i].idMessage%}/edit">Editar</a>
+                </td>
+            </tr>
+            {% } %}
+            </tbody>
+            {% if (o.data.items.length==0) { %}
+            <tfoot class="full-width">
+    <tr>
+      <th></th>
+      <th colspan="1">
+        No hay registros
+      </th>
+      <th></th>
+    </tr>
+  </tfoot>
+            {% } %}
+        </table>
+</script>
+<script type="text/x-tmpl" id="tmpl-tableReservaciones">
+<div class="ui grid">
+            <div class="one column row">
+                <div class="right floated column">
+                <div class="ui right pointing green basic label"><i class="info icon"></i>Recuerda refrescar la tabla...</div>
+                 <div class="ui right floated small primary labeled icon button" id="btn-crear-reservaciones"><i class="{%=o.option.icon%} icon"></i>{%=o.option.title%}</div>
+                <a href="#/reservaciones" class="ui right floated small primary labeled icon button"><i class="redo icon"></i>Actualizar</a>
+                </div>
+            </div>
+        </div>
+        <table class="ui celled table">
+            <thead>
+            <tr>
+            {% for (var i=0; i<o.thead.length; i++) { %}
+                <th>{%=o.thead[i]%}</th>
+            {% } %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for (var i=0; i<o.data.items.length; i++) { %}
+            <tr>
+                <td class="collapsing">{%=o.data.items[i].startDate%}</td>
+                <td>{%=o.data.items[i].devolutionDate%}</td>
+                <td>{%=(o.data.items[i].client===null)?'Cliente no existe o fue eliminado.':o.data.items[i].client.name%}</td>
+                <td>{%=(o.data.items[i].computer===null)?'Computador no existe o fue eliminado.':o.data.items[i].computer.name%}</td>
+                <td class="d-none">
+                    <div class="tiny ui buttons">
+            <a class="ui negative button" href="#/reservaciones/{%=o.data.items[i].idReservation%}/delete">Eliminar</a>
+            <div class="or" data-text="ó"></div>
+            <a class="ui blue button" href="#/reservaciones/{%=o.data.items[i].idReservation%}/edit">Editar</a>
                 </td>
             </tr>
             {% } %}
