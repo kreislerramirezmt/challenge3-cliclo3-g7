@@ -1,7 +1,7 @@
 window.addEventListener("load", () => {
     const url = {
         base_url: {
-            kreisler: 'http://localhost:8080',
+            kreisler: `http://${window.location.host}`,
             david: '',
             jhon: ''
         },
@@ -31,7 +31,7 @@ window.addEventListener("load", () => {
             return `${url.api()}${url.sities.reservation}${(!id)?'':`/${id}`}`;
         }
     };
-    console.log(url.api());
+    console.log(url.base_url.kreisler);
     //const dummyTarget = document.getElementById('temp');
     const Toast = Swal.mixin({
         toast: true,
@@ -61,6 +61,9 @@ window.addEventListener("load", () => {
                     content+=`<option value="${respuesta[i].id}">${respuesta[i].name}</option>`;
                 }
                 $("#category-id-select").html(content);
+                if (respuesta.length==0){
+                    Toast.fire('No existen categorias, por favor añade una primero.')
+                }
 
             },
             error: function (xhr, status) {
@@ -83,7 +86,9 @@ window.addEventListener("load", () => {
                     return $(`<option value="${item.idClient}">${item.name}</option>`);
                 });
                 $("#client-id-select").html(content);
-
+                if (respuesta.length==0){
+                    Toast.fire('No existen clientes, por favor añade uno primero.')
+                }
             },
             error: function (xhr, status) {
                 Toast.fire('Ha sucedido un problema');
@@ -105,7 +110,9 @@ window.addEventListener("load", () => {
                     return $(`<option value="${item.id}">${item.name}</option>`);
                 });
                 $("#computer-id-select").html(content);
-
+                if (respuesta.length==0){
+                    Toast.fire('No existen computadores, por favor añade uno primero.')
+                }
             },
             error: function (xhr, status) {
                 Toast.fire('Ha sucedido un problema');
